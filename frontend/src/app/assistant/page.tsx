@@ -46,7 +46,7 @@ export default function AssistantPage() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = textToSend || input;
     if (!query.trim()) return;
 
@@ -61,7 +61,38 @@ export default function AssistantPage() {
     if (!textToSend) setInput('');
     setIsTyping(true);
 
-    // Simulated contextual AI knowledge response
+    try {
+      const historyPayload = messages.slice(-6).map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        parts: m.text,
+      }));
+
+      const res = await fetch('http://localhost:8000/api/v1/assistant/chat/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: query,
+          history: historyPayload,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const botMsg: ChatMessage = {
+          id: 'msg-' + Date.now(),
+          sender: 'assistant',
+          text: data.response || data.text,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, botMsg]);
+        setIsTyping(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend assistant API offline, falling back to local intelligence', err);
+    }
+
+    // Contextual fallback response
     setTimeout(() => {
       let reply = `Here is a curated recommendation for: "${query}"\n\n`;
 
@@ -93,7 +124,7 @@ export default function AssistantPage() {
 
       setMessages((prev) => [...prev, botMsg]);
       setIsTyping(false);
-    }, 900);
+    }, 600);
   };
 
   const handleClear = () => {

@@ -63,7 +63,7 @@ export const AIAssistantDrawer: React.FC<Props> = ({
     'What if it rains during our visit?',
   ];
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = textToSend || inputMessage;
     if (!text.trim()) return;
 
@@ -77,7 +77,32 @@ export const AIAssistantDrawer: React.FC<Props> = ({
     setMessages((prev) => [...prev, userMsg]);
     setInputMessage('');
 
-    // Contextual AI answers
+    try {
+      const placesStr = selectedPlaces.map((p) => p.name).join(', ');
+      const contextPrompt = `User question: "${text}"\nContext: Trip to ${destinationCity.name} from ${departureCity || 'Bengaluru'}, Duration: ${durationDays} days, Budget: ₹${budgetAmount.toLocaleString()}, Traveler type: ${travellerType}, Places selected: ${placesStr}. Keep answer practical and concise.`;
+
+      const res = await fetch('http://localhost:8000/api/v1/assistant/chat/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: contextPrompt }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const aiMsg: ChatMessage = {
+          id: 'ai-' + Date.now(),
+          sender: 'ai',
+          text: data.response || data.text,
+          timestamp: 'Just now',
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+        return;
+      }
+    } catch (e) {
+      console.warn('Backend Gemini assistant unavailable, using offline fallback', e);
+    }
+
+    // Contextual offline answers fallback
     setTimeout(() => {
       let reply = '';
       const lower = text.toLowerCase();

@@ -347,7 +347,7 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = ({
   };
 
   // Handle AI Chat
-  const handleSendAiPrompt = (e: React.FormEvent) => {
+  const handleSendAiPrompt = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!aiInput.trim()) return;
 
@@ -355,7 +355,36 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = ({
     setAiMessages((prev) => [...prev, { sender: 'user', text: userText }]);
     setAiInput('');
 
-    // Contextual responses based on destination and topic
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/assistant/room/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          room_name: room.name,
+          destination: room.destination_city || room.destination_name,
+          message: userText,
+          group_context: {
+            members_count: members.length,
+            duration_days: room.duration_days,
+            budget_per_person: room.budget_per_person,
+            travel_style: room.travel_style,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAiMessages((prev) => [
+          ...prev,
+          { sender: 'ai', text: data.response || data.text },
+        ]);
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend room AI service unavailable, using local response', err);
+    }
+
+    // Contextual responses based on destination and topic (fallback)
     setTimeout(() => {
       let reply = `Here are some recommendations for ${room.destination_city || 'your trip'}:`;
       const lower = userText.toLowerCase();
