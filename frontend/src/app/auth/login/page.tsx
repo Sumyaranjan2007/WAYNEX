@@ -1,20 +1,55 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Mail, Lock, ArrowRight, ShieldCheck, Compass } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Mail, Lock, Compass, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Card, CardContent } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { useAuthStore } from '@/store/auth-store';
 
-export default function LoginPage() {
+// Security: only allow internal redirects
+const ALLOWED_REDIRECT_PREFIXES = [
+  '/',
+  '/trips',
+  '/connect',
+  '/profile',
+  '/safe',
+  '/explore',
+  '/destinations',
+  '/assistant',
+  '/transport',
+  '/budget-planner',
+  '/hotels',
+  '/language',
+];
+
+function isAllowedRedirect(url: string): boolean {
+  if (!url) return false;
+  return ALLOWED_REDIRECT_PREFIXES.some(
+    (prefix) =>
+      url === prefix ||
+      url.startsWith(prefix + '?') ||
+      url.startsWith(prefix + '/')
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPath = searchParams.get('from') || '';
+
   const { login, isLoading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
+
+  const redirectAfterLogin = () => {
+    const target = isAllowedRedirect(fromPath) ? fromPath : '/';
+    router.push(target);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,26 +60,30 @@ export default function LoginPage() {
       setLocalError('Please enter your email address');
       return;
     }
+    if (!password) {
+      setLocalError('Please enter your password');
+      return;
+    }
 
     const success = await login({ email, password });
     if (success) {
-      router.push('/profile');
+      redirectAfterLogin();
     }
   };
 
   const handleDemoLogin = async () => {
-    setEmail('explorer@waynex.in');
-    setPassword('demo1234');
+    clearError();
+    setLocalError('');
     const success = await login({ email: 'explorer@waynex.in', password: 'demo' });
     if (success) {
-      router.push('/profile');
+      redirectAfterLogin();
     }
   };
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 bg-navy-radial">
       <div className="w-full max-w-md space-y-6">
-        {/* Brand header */}
+        {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center gap-2 group">
             <div className="w-10 h-10 rounded-xl bg-navy-800 border border-cyan-500/40 flex items-center justify-center p-1 shadow-glow-cyan">
@@ -60,6 +99,12 @@ export default function LoginPage() {
           <p className="text-xs sm:text-sm text-navy-300">
             Sign in to access your saved trips, travel rooms, and safety settings
           </p>
+          {fromPath && isAllowedRedirect(fromPath) && (
+            <p className="text-xs text-cyan-400 font-semibold bg-cyan-500/10 border border-cyan-500/20 rounded-lg py-1.5 px-3">
+              ✓ You&apos;ll be taken to{' '}
+              <span className="font-black">{fromPath}</span> after signing in
+            </p>
+          )}
         </div>
 
         {/* Login Card */}
@@ -81,14 +126,29 @@ export default function LoginPage() {
               required
             />
 
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              leftIcon={<Lock className="w-4 h-4" />}
-            />
+            {/* Password field with show/hide toggle */}
+            <div className="relative">
+              <Input
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                leftIcon={<Lock className="w-4 h-4" />}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-9 text-navy-400 hover:text-cyan-400 transition-colors"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
             <div className="flex items-center justify-between text-xs pt-1">
               <label className="flex items-center gap-2 cursor-pointer text-navy-300">
@@ -118,12 +178,12 @@ export default function LoginPage() {
                 Or Quick Test
               </span>
             </div>
-
             <Button
               type="button"
               variant="outline"
               size="md"
               onClick={handleDemoLogin}
+              isLoading={isLoading}
               className="w-full text-xs font-semibold border-navy-600 text-cyan-300"
             >
               Log in as Demo Traveler (One Click)
@@ -133,12 +193,28 @@ export default function LoginPage() {
 
         {/* Footer Link */}
         <p className="text-center text-xs text-navy-400">
-          Don’t have a WAYNEX account?{' '}
+          Don&apos;t have a WAYNEX account?{' '}
           <Link href="/auth/register" className="text-cyan-400 font-bold hover:underline">
             Create an Account
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[85vh] flex items-center justify-center bg-navy-radial">
+          <div className="text-white text-sm animate-pulse">
+            Loading sign in...
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

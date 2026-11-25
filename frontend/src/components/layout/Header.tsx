@@ -113,12 +113,12 @@ export const Header: React.FC = () => {
               </Link>
             ) : (
               <div className="hidden sm:flex items-center gap-2">
-                <Link href="/login">
+                <Link href="/auth/login">
                   <Button variant="ghost" size="sm" className="text-[#14243A] hover:bg-[#EFE9DC] font-bold">
                     Sign In
                   </Button>
                 </Link>
-                <Link href="/register">
+                <Link href="/auth/register">
                   <Button size="sm" className="bg-[#B85C38] hover:bg-[#9A4928] text-white font-bold">
                     Join WAYNEX
                   </Button>

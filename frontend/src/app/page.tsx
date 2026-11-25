@@ -622,6 +622,160 @@ export default function HomePage() {
         </Container>
       </section>
 
+      {/* SECTION 7B: AI TRIP PLANNER + FEATURE CTA CARDS */}
+      <section className="py-20 bg-gradient-to-br from-[#14243A] via-[#1E334D] to-[#14243A] relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+          <div className="absolute top-10 right-20 w-72 h-72 rounded-full bg-[#FF9933] blur-3xl" />
+          <div className="absolute bottom-10 left-20 w-96 h-96 rounded-full bg-[#B85C38] blur-3xl" />
+        </div>
+
+        <Container className="relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF9933]/15 border border-[#FF9933]/30 text-[#FF9933] text-xs font-bold uppercase tracking-wider mb-5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Powered by Google Gemini AI
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-4">
+              Your Complete India Travel
+              <span className="block text-[#FF9933]">Command Centre</span>
+            </h2>
+            <p className="text-sm sm:text-base text-[#94A3B8] leading-relaxed">
+              Everything you need to plan, book, travel safely, and connect with fellow travellers — all in one place.
+            </p>
+          </div>
+
+          {/* 4 Feature CTA Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+            {/* Card 1: AI Trip Planner */}
+            <Link href="/trips" className="group">
+              <div className="relative h-full p-6 rounded-2xl bg-gradient-to-br from-[#FF9933]/20 to-[#B85C38]/10 border border-[#FF9933]/30 hover:border-[#FF9933]/70 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF9933]/10 flex flex-col gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-[#FF9933] flex items-center justify-center shadow-lg shadow-[#FF9933]/30 group-hover:scale-110 transition-transform">
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-black text-white mb-2 group-hover:text-[#FF9933] transition-colors">
+                    Plan with AI Trip Planner
+                  </h3>
+                  <p className="text-xs text-[#94A3B8] leading-relaxed">
+                    8-step interactive journey — destination, budget, hotels, transport, itinerary and YouTube guides. All AI-powered.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 text-[#FF9933] text-xs font-bold">
+                  <span>Start Planning</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+                <div className="absolute top-4 right-4 text-[9px] font-black px-2 py-0.5 rounded-full bg-[#FF9933] text-[#14243A] uppercase tracking-wider">
+                  AI
+                </div>
+              </div>
+            </Link>
+
+            {/* Card 2: Interactive Map */}
+            <Link href="/explore" className="group">
+              <div className="relative h-full p-6 rounded-2xl bg-gradient-to-br from-[#174B37]/30 to-[#174B37]/10 border border-[#174B37]/40 hover:border-[#38A169]/60 transition-all duration-300 hover:shadow-lg hover:shadow-[#174B37]/10 flex flex-col gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-[#174B37] flex items-center justify-center shadow-lg shadow-[#174B37]/30 group-hover:scale-110 transition-transform">
+                  <Navigation className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-black text-white mb-2 group-hover:text-[#38A169] transition-colors">
+                    Explore Coordinates on Map
+                  </h3>
+                  <p className="text-xs text-[#94A3B8] leading-relaxed">
+                    Interactive 3D India map with authentic state boundaries, 547 destinations, and geographic detail.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 text-[#38A169] text-xs font-bold">
+                  <span>Open 3D Map</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+
+            {/* Card 3: Travel Guide / Assistant */}
+            <Link href="/assistant" className="group">
+              <div className="relative h-full p-6 rounded-2xl bg-gradient-to-br from-[#1E40AF]/20 to-[#1E40AF]/5 border border-[#1E40AF]/30 hover:border-[#60A5FA]/60 transition-all duration-300 hover:shadow-lg hover:shadow-[#1E40AF]/10 flex flex-col gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-[#1E40AF] flex items-center justify-center shadow-lg shadow-[#1E40AF]/30 group-hover:scale-110 transition-transform">
+                  <Camera className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-black text-white mb-2 group-hover:text-[#60A5FA] transition-colors">
+                    Watch Travel Experience Guide
+                  </h3>
+                  <p className="text-xs text-[#94A3B8] leading-relaxed">
+                    AI travel assistant with YouTube guides, cultural insights, local language phrases, and destination stories.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 text-[#60A5FA] text-xs font-bold">
+                  <span>Ask AI Assistant</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+
+            {/* Card 4: Connect */}
+            <Link href="/connect" className="group">
+              <div className="relative h-full p-6 rounded-2xl bg-gradient-to-br from-[#B85C38]/20 to-[#B85C38]/5 border border-[#B85C38]/30 hover:border-[#B85C38]/70 transition-all duration-300 hover:shadow-lg hover:shadow-[#B85C38]/10 flex flex-col gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-[#B85C38] flex items-center justify-center shadow-lg shadow-[#B85C38]/30 group-hover:scale-110 transition-transform">
+                  <Heart className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-black text-white mb-2 group-hover:text-[#F87171] transition-colors">
+                    Connect with Travelling Companions
+                  </h3>
+                  <p className="text-xs text-[#94A3B8] leading-relaxed">
+                    Create travel rooms, discover companions for group trips, share budgets and plan journeys together.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 text-[#F87171] text-xs font-bold">
+                  <span>Find Travel People</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* Large CTA: Primary Trip Planner */}
+          <div className="bg-gradient-to-r from-[#FF9933]/10 via-[#FF9933]/5 to-transparent border border-[#FF9933]/20 rounded-3xl p-8 sm:p-10 flex flex-col lg:flex-row items-center gap-8">
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#FF9933] flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[#FF9933] uppercase tracking-wider">AI-Powered · 8 Smart Steps</div>
+                  <h3 className="text-2xl sm:text-3xl font-black text-white">Plan Your Perfect Indian Trip</h3>
+                </div>
+              </div>
+              <p className="text-sm text-[#94A3B8] leading-relaxed max-w-xl">
+                WAYNEX acts as your personal travel agent. Choose your destination city, select tourist spots, pick your budget, transportation, and accommodation — then get a complete AI-generated daily itinerary with hotel comparisons, restaurant recommendations, and YouTube travel guides.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {['Destination Selection', 'AI Recommendations', 'Budget Planner', 'Hotel Comparison', 'Daily Itinerary', 'YouTube Guides'].map((tag) => (
+                  <span key={tag} className="px-3 py-1 rounded-full bg-[#FF9933]/10 border border-[#FF9933]/20 text-[#FF9933] text-[11px] font-bold">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+              <Link href="/trips">
+                <Button className="w-full sm:w-auto lg:w-56 bg-[#FF9933] hover:bg-[#E8882B] text-[#14243A] font-black px-8 py-4 rounded-xl shadow-lg shadow-[#FF9933]/25 text-sm">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Start AI Trip Planning
+                </Button>
+              </Link>
+              <Link href="/budget-planner">
+                <Button variant="outline" className="w-full sm:w-auto lg:w-56 border-[#FF9933]/30 text-[#FF9933] hover:bg-[#FF9933]/10 font-bold px-8 py-4 rounded-xl text-sm">
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Calculate Budget First
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       {/* SECTION 8: WAYNEX SAFE & COMMUNITY */}
       <section className="py-16 bg-white border-t border-[#E2D9C8]">
         <Container>
