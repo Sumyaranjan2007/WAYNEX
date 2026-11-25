@@ -1,290 +1,576 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Briefcase,
-  Plus,
-  Calendar,
+  Compass,
   MapPin,
-  Clock,
-  CheckCircle2,
+  Calendar,
+  Wallet,
+  Users,
+  Bus,
+  Hotel,
+  Sparkles,
+  Bookmark,
+  Plus,
   Trash2,
   Share2,
+  Clock,
+  ArrowRight,
+  ShieldCheck,
+  Bot,
+  Layers,
 } from 'lucide-react';
 import { Container } from '@/components/ui/Container';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { Input } from '@/components/ui/Input';
-import { formatCurrency } from '@/lib/utils';
+import { PlannerProgressBar } from '@/components/planner/PlannerProgressBar';
+import { Step1DestinationCity } from '@/components/planner/Step1DestinationCity';
+import { Step2PlacesToVisit } from '@/components/planner/Step2PlacesToVisit';
+import { Step3Budget } from '@/components/planner/Step3Budget';
+import { Step4Duration } from '@/components/planner/Step4Duration';
+import { Step5TravellerType } from '@/components/planner/Step5TravellerType';
+import { Step6Transportation } from '@/components/planner/Step6Transportation';
+import { Step7Accommodation } from '@/components/planner/Step7Accommodation';
+import { Step8FinalItinerary } from '@/components/planner/Step8FinalItinerary';
+import { AIAssistantDrawer } from '@/components/planner/AIAssistantDrawer';
 
-interface Trip {
-  id: string;
-  title: string;
-  destination: string;
-  startDate: string;
-  endDate: string;
-  budget: number;
-  status: 'upcoming' | 'completed' | 'saved';
-  image: string;
-  days: {
-    dayNumber: number;
-    title: string;
-    activities: string[];
-  }[];
-}
+import {
+  CITY_HUBS,
+  TRANSPORT_CATALOG,
+  HOTEL_CATALOG,
+  CityHub,
+  AttractionItem,
+  TransportOption,
+  HotelOption,
+} from '@/data/tripPlannerData';
+import {
+  getCityHubById,
+  getAttractionsForCity,
+  calculateBudgetBreakdown,
+  generateChronologicalItinerary,
+  collectYouTubeGuidesForPlaces,
+  getLanguagePhrasesForCity,
+  CompleteTripPlan,
+  saveTripDraft,
+  loadTripDraft,
+  saveTripToLocalStorage,
+  getSavedTripsFromLocalStorage,
+} from '@/services/tripPlanningEngine';
+import { formatCurrency } from '@/lib/utils';
+import { RobustImage } from '@/components/ui/RobustImage';
 
 export default function TripsPage() {
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'saved'>('upcoming');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newTrip, setNewTrip] = useState({ title: '', destination: '', startDate: '', endDate: '', budget: 5000 });
+  // Navigation mode: 'planner' or 'saved_trips'
+  const [viewMode, setViewMode] = useState<'planner' | 'saved_trips'>('planner');
+  const [currentStep, setCurrentStep] = useState(1);
+  const [maxCompletedStep, setMaxCompletedStep] = useState(1);
 
-  const [trips, setTrips] = useState<Trip[]>([
-    {
-      id: 'trip-1',
-      title: 'Hampi Heritage & Bouldering Expedition',
-      destination: 'Hampi, Karnataka',
-      startDate: '2026-12-10',
-      endDate: '2026-12-13',
-      budget: 4500,
-      status: 'upcoming',
-      image: 'https://images.unsplash.com/photo-1600100397608-f010f443bbf6?w=600&h=400&fit=crop',
-      days: [
-        {
-          dayNumber: 1,
-          title: 'Arrival & Sacred Center',
-          activities: ['Check-in at Sanapur homestay', 'Virupaksha temple exploration', 'Sunset hike to Matanga Hill'],
-        },
-        {
-          dayNumber: 2,
-          title: 'Royal Enclosures & Stone Chariot',
-          activities: ['Vittala Temple & musical pillars', 'Elephant Stables & Lotus Mahal', 'Coracle river crossing'],
-        },
-        {
-          dayNumber: 3,
-          title: 'Boulder Biking & Departure',
-          activities: ['Hippie Island cycling tour', 'Sanapur lake cliff views', 'Evening sleeper train back to Bengaluru'],
-        },
-      ],
-    },
-    {
-      id: 'trip-2',
-      title: 'Monsoon Mist & Coffee Estate Retreat',
-      destination: 'Coorg, Karnataka',
-      startDate: '2026-08-15',
-      endDate: '2026-08-18',
-      budget: 6200,
-      status: 'completed',
-      image: 'https://images.unsplash.com/photo-1596761226487-17eb481a5f6e?w=600&h=400&fit=crop',
-      days: [
-        {
-          dayNumber: 1,
-          title: 'Plantation Walk & Abbey Falls',
-          activities: ['Estate tour and Arabica bean roasting', 'Abbey Falls visit', 'Kodava dinner'],
-        },
-      ],
-    },
-  ]);
+  // Stage 1: City & Starting location
+  const [selectedCity, setSelectedCity] = useState<CityHub>(CITY_HUBS[0]); // default Mysuru
+  const [departureCity, setDepartureCity] = useState('Bengaluru');
 
-  const handleCreateTrip = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTrip.title || !newTrip.destination) return;
+  // Stage 2: Selected Places
+  const [selectedPlaces, setSelectedPlaces] = useState<AttractionItem[]>([]);
 
-    const created: Trip = {
-      id: 'trip-' + Date.now(),
-      title: newTrip.title,
-      destination: newTrip.destination,
-      startDate: newTrip.startDate || '2026-12-25',
-      endDate: newTrip.endDate || '2026-12-28',
-      budget: newTrip.budget,
-      status: 'upcoming',
-      image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&h=400&fit=crop',
-      days: [
-        {
-          dayNumber: 1,
-          title: 'Arrival & Check-in',
-          activities: ['Check in to stay', 'Local area orientation', 'Sunset viewpoint'],
-        },
-      ],
-    };
+  // Stage 3: Budget
+  const [budgetAmount, setBudgetAmount] = useState(8000);
+  const [budgetType, setBudgetType] = useState<'per_person' | 'total_group'>('per_person');
 
-    setTrips([created, ...trips]);
-    setIsModalOpen(false);
+  // Stage 4: Duration
+  const [durationDays, setDurationDays] = useState(2);
+  const [startDate, setStartDate] = useState('2026-12-10');
+  const [endDate, setEndDate] = useState('2026-12-12');
+
+  // Stage 5: Traveller Type
+  const [travellerType, setTravellerType] = useState<'solo' | 'couple' | 'friends' | 'family'>('friends');
+  const [adultsCount, setAdultsCount] = useState(2);
+  const [childrenCount, setChildrenCount] = useState(0);
+  const [specialPreferences, setSpecialPreferences] = useState<string[]>(['Photography & heritage architecture']);
+
+  // Stage 6: Transportation
+  const [selectedTransport, setSelectedTransport] = useState<TransportOption>(
+    TRANSPORT_CATALOG['bengaluru-mysuru'][0]
+  );
+
+  // Stage 7: Accommodation
+  const [selectedHotel, setSelectedHotel] = useState<HotelOption>(
+    HOTEL_CATALOG['mysuru'][1] // Ginger Hotel
+  );
+
+  // Assistant & Save States
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savedTrips, setSavedTrips] = useState<CompleteTripPlan[]>([]);
+
+  // Initialize defaults on mount
+  useEffect(() => {
+    // Load default places for Mysuru
+    const defaultPlaces = getAttractionsForCity(selectedCity.id).slice(0, 5);
+    setSelectedPlaces(defaultPlaces);
+
+    // Load saved trips from local storage
+    const loadedSaved = getSavedTripsFromLocalStorage();
+    setSavedTrips(loadedSaved);
+
+    // Check for draft
+    const draft = loadTripDraft();
+    if (draft && draft.selectedCity) {
+      setSelectedCity(draft.selectedCity);
+      if (draft.departureCity) setDepartureCity(draft.departureCity);
+      if (draft.selectedPlaces) setSelectedPlaces(draft.selectedPlaces);
+      if (draft.budgetAmount) setBudgetAmount(draft.budgetAmount);
+      if (draft.durationDays) setDurationDays(draft.durationDays);
+      if (draft.travellerType) setTravellerType(draft.travellerType);
+    }
+  }, []);
+
+  // Update places when city changes
+  const handleSelectCity = (city: CityHub) => {
+    setSelectedCity(city);
+    const newPlaces = getAttractionsForCity(city.id).slice(0, 5);
+    setSelectedPlaces(newPlaces);
+
+    // Update transport & hotel defaults
+    const key = `${(departureCity || 'bengaluru').toLowerCase()}-${city.id.toLowerCase()}`;
+    const trans = TRANSPORT_CATALOG[key] || TRANSPORT_CATALOG['bengaluru-mysuru'];
+    if (trans && trans.length > 0) setSelectedTransport(trans[0]);
+
+    const hotels = HOTEL_CATALOG[city.id] || HOTEL_CATALOG['mysuru'];
+    if (hotels && hotels.length > 0) setSelectedHotel(hotels[0]);
   };
 
-  const filteredTrips = trips.filter((t) => t.status === activeTab);
+  const handleTogglePlace = (place: AttractionItem) => {
+    setSelectedPlaces((prev) => {
+      const exists = prev.some((p) => p.id === place.id);
+      if (exists) {
+        return prev.filter((p) => p.id !== place.id);
+      } else {
+        return [...prev, place];
+      }
+    });
+  };
+
+  const handleTogglePreference = (pref: string) => {
+    setSpecialPreferences((prev) =>
+      prev.includes(pref) ? prev.filter((p) => p !== pref) : [...prev, pref]
+    );
+  };
+
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
+    if (step > maxCompletedStep) {
+      setMaxCompletedStep(step);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNextStep = () => {
+    if (currentStep < 8) {
+      goToStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      goToStep(currentStep - 1);
+    }
+  };
+
+  // Compile Final Complete Plan
+  const compiledBudget = calculateBudgetBreakdown(
+    budgetAmount,
+    budgetType,
+    adultsCount + childrenCount,
+    durationDays,
+    selectedHotel?.tier,
+    selectedTransport?.type
+  );
+
+  const compiledItinerary = generateChronologicalItinerary(
+    selectedCity,
+    departureCity,
+    selectedPlaces,
+    durationDays,
+    selectedTransport,
+    selectedHotel,
+    compiledBudget
+  );
+
+  const compiledVideos = collectYouTubeGuidesForPlaces(selectedPlaces);
+  const compiledPhrases = getLanguagePhrasesForCity(selectedCity);
+
+  const fullTripPlan: CompleteTripPlan = {
+    id: `trip-${selectedCity.id}-${Date.now()}`,
+    title: `${selectedCity.name} ${durationDays}-Day Trip`,
+    destinationCity: selectedCity,
+    departureCity: departureCity || 'Bengaluru',
+    travelDates: { start: startDate, end: endDate },
+    durationDays,
+    budget: compiledBudget,
+    travellerType,
+    adultsCount,
+    childrenCount,
+    selectedTransport,
+    selectedHotel,
+    selectedPlaces,
+    itineraryDays: compiledItinerary,
+    allVideos: compiledVideos,
+    localPhrases: compiledPhrases,
+    weatherNote: `Optimal seasonal conditions expected in ${selectedCity.name}. Average temperature ~18°C to 28°C.`,
+    emergencyInfo: {
+      nationalEmergency: '112',
+      touristHelpline: '1363',
+      nearestHospital: `${selectedCity.name} District Hospital & Emergency Trauma Care`,
+      touristPoliceStation: `${selectedCity.name} Heritage Tourist Police Station`,
+    },
+    status: 'draft',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const handleSaveTrip = () => {
+    saveTripToLocalStorage(fullTripPlan);
+    setIsSaved(true);
+    setSavedTrips(getSavedTripsFromLocalStorage());
+
+    // Also attempt backend persistence silently
+    if (typeof window !== 'undefined') {
+      fetch('http://127.0.0.1:8000/api/v1/budget/trips/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: fullTripPlan.title,
+          destination_city: selectedCity.name,
+          departure_city: departureCity,
+          duration_days: durationDays,
+          budget_amount: budgetAmount,
+          budget_type: budgetType,
+          traveller_type: travellerType,
+          adults_count: adultsCount,
+          children_count: childrenCount,
+          transport_mode: selectedTransport?.type || 'bus',
+          accommodation_type: selectedHotel?.tier || 'budget_hotel',
+          status: 'saved',
+          selected_places: selectedPlaces.map((p) => p.name),
+          itinerary_data: fullTripPlan,
+        }),
+      }).catch(() => {
+        // Fallback already saved in localStorage
+      });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-navy-950 text-white py-12">
+    <div className="min-h-screen bg-[#F7F4EC] text-[#14243A] py-8 sm:py-12">
       <Container>
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div>
-            <Badge variant="info" className="mb-2">
-              Trip Organizer
-            </Badge>
-            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-2">
-              My Travel Itineraries
-            </h1>
-            <p className="text-navy-200 text-sm sm:text-base">
-              Manage your upcoming adventures, past completed expeditions, and saved travel plans.
-            </p>
+        {/* Navigation & Mode Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="text-xs text-[#64748B] hover:text-[#14243A] font-semibold"
+            >
+              Home
+            </Link>
+            <span className="text-xs text-[#94A3B8]">&rarr;</span>
+            <span className="text-xs font-bold text-[#14243A]">AI Trip Planner</span>
           </div>
 
-          <Button size="lg" onClick={() => setIsModalOpen(true)} className="shrink-0 self-start md:self-auto">
-            <Plus className="w-5 h-5 mr-2" />
-            Plan New Trip
-          </Button>
+          <div className="inline-flex p-1 bg-white border border-[#E2D9C8] rounded-xl self-start sm:self-auto shadow-sm">
+            <button
+              type="button"
+              onClick={() => setViewMode('planner')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'planner'
+                  ? 'bg-[#14243A] text-white shadow-sm'
+                  : 'text-[#475569] hover:text-[#14243A]'
+              }`}
+            >
+              Interactive Trip Planner
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('saved_trips')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                viewMode === 'saved_trips'
+                  ? 'bg-[#14243A] text-white shadow-sm'
+                  : 'text-[#475569] hover:text-[#14243A]'
+              }`}
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>Saved Trips ({savedTrips.length})</span>
+            </button>
+          </div>
         </div>
 
-        {/* Tab Filters */}
-        <div className="flex border-b border-navy-800 mb-8 space-x-6 text-sm font-bold">
-          <button
-            onClick={() => setActiveTab('upcoming')}
-            className={`pb-3 transition-colors ${
-              activeTab === 'upcoming' ? 'border-b-2 border-cyan-400 text-cyan-400' : 'text-navy-400 hover:text-white'
-            }`}
-          >
-            Upcoming Trips ({trips.filter((t) => t.status === 'upcoming').length})
-          </button>
-          <button
-            onClick={() => setActiveTab('completed')}
-            className={`pb-3 transition-colors ${
-              activeTab === 'completed' ? 'border-b-2 border-cyan-400 text-cyan-400' : 'text-navy-400 hover:text-white'
-            }`}
-          >
-            Completed Trips ({trips.filter((t) => t.status === 'completed').length})
-          </button>
-        </div>
+        {/* VIEW MODE 1: MASTER MULTI-STEP PLANNER */}
+        {viewMode === 'planner' ? (
+          <div>
+            {/* Progress Bar (Stages 1 to 8) */}
+            <PlannerProgressBar
+              currentStep={currentStep}
+              onStepClick={goToStep}
+              maxCompletedStep={maxCompletedStep}
+            />
 
-        {/* Trips List */}
-        <div className="space-y-6">
-          {filteredTrips.map((trip) => (
-            <Card key={trip.id} variant="default" className="p-6 overflow-hidden">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-4 relative h-48 lg:h-full rounded-xl overflow-hidden">
-                  <img src={trip.image} alt={trip.title} className="w-full h-full object-cover" />
-                  <div className="absolute top-3 left-3">
-                    <Badge variant="success" size="sm">
-                      {trip.status}
-                    </Badge>
-                  </div>
-                </div>
+            {/* STAGE 1: DESTINATION CITY */}
+            {currentStep === 1 && (
+              <Step1DestinationCity
+                selectedCity={selectedCity}
+                onSelectCity={handleSelectCity}
+                departureCity={departureCity}
+                onChangeDepartureCity={setDepartureCity}
+                onNext={handleNextStep}
+              />
+            )}
 
-                <div className="lg:col-span-8 flex flex-col justify-between space-y-4">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{trip.title}</h2>
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-navy-300 mb-4">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4 text-cyan-400" />
-                        {trip.destination}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4 text-amber-400" />
-                        {trip.startDate} &mdash; {trip.endDate}
-                      </span>
-                      <span className="font-bold text-amber-300">
-                        Budget: {formatCurrency(trip.budget)}
-                      </span>
-                    </div>
+            {/* STAGE 2: PLACES TO VISIT */}
+            {currentStep === 2 && (
+              <Step2PlacesToVisit
+                selectedCity={selectedCity}
+                selectedPlaces={selectedPlaces}
+                onTogglePlace={handleTogglePlace}
+                onSetSelectedPlaces={setSelectedPlaces}
+                onPrev={handlePrevStep}
+                onNext={handleNextStep}
+              />
+            )}
 
-                    {/* Day-by-day Preview */}
-                    <div className="space-y-2 border-t border-navy-800 pt-3">
-                      <div className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                        Day-Wise Plan
-                      </div>
-                      {trip.days.map((d) => (
-                        <div key={d.dayNumber} className="text-xs text-navy-200">
-                          <strong className="text-white">Day {d.dayNumber}: {d.title}</strong>
-                          <div className="text-navy-400 ml-4">
-                            &bull; {d.activities.join(' • ')}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            {/* STAGE 3: BUDGET */}
+            {currentStep === 3 && (
+              <Step3Budget
+                selectedCity={selectedCity}
+                selectedPlaces={selectedPlaces}
+                budgetAmount={budgetAmount}
+                budgetType={budgetType}
+                travellersCount={adultsCount + childrenCount}
+                durationDays={durationDays}
+                onChangeBudgetAmount={setBudgetAmount}
+                onChangeBudgetType={setBudgetType}
+                onPrev={handlePrevStep}
+                onNext={handleNextStep}
+              />
+            )}
 
-                  <div className="pt-3 border-t border-navy-800 flex items-center justify-between text-xs">
-                    <span className="text-emerald-400 font-semibold">
-                      Safety Checklist Completed
-                    </span>
-                    <Button size="sm" variant="outline">
-                      View Full Itinerary
-                    </Button>
-                  </div>
-                </div>
+            {/* STAGE 4: DURATION */}
+            {currentStep === 4 && (
+              <Step4Duration
+                selectedCity={selectedCity}
+                selectedPlaces={selectedPlaces}
+                durationDays={durationDays}
+                startDate={startDate}
+                endDate={endDate}
+                onChangeDurationDays={setDurationDays}
+                onChangeStartDate={setStartDate}
+                onChangeEndDate={setEndDate}
+                onPrev={handlePrevStep}
+                onNext={handleNextStep}
+              />
+            )}
+
+            {/* STAGE 5: TRAVELLER TYPE */}
+            {currentStep === 5 && (
+              <Step5TravellerType
+                travellerType={travellerType}
+                adultsCount={adultsCount}
+                childrenCount={childrenCount}
+                specialPreferences={specialPreferences}
+                onChangeTravellerType={setTravellerType}
+                onChangeAdultsCount={setAdultsCount}
+                onChangeChildrenCount={setChildrenCount}
+                onTogglePreference={handleTogglePreference}
+                onPrev={handlePrevStep}
+                onNext={handleNextStep}
+              />
+            )}
+
+            {/* STAGE 6: TRANSPORTATION */}
+            {currentStep === 6 && (
+              <Step6Transportation
+                selectedCity={selectedCity}
+                departureCity={departureCity}
+                selectedTransport={selectedTransport}
+                onSelectTransport={setSelectedTransport}
+                onPrev={handlePrevStep}
+                onNext={handleNextStep}
+              />
+            )}
+
+            {/* STAGE 7: ACCOMMODATION */}
+            {currentStep === 7 && (
+              <Step7Accommodation
+                selectedCity={selectedCity}
+                selectedPlaces={selectedPlaces}
+                selectedHotel={selectedHotel}
+                onSelectHotel={setSelectedHotel}
+                onPrev={handlePrevStep}
+                onNext={handleNextStep}
+              />
+            )}
+
+            {/* STAGE 8: COMPLETE PERSONALIZED FINAL ITINERARY */}
+            {currentStep === 8 && (
+              <Step8FinalItinerary
+                tripPlan={fullTripPlan}
+                onEditStep={goToStep}
+                onSaveTrip={handleSaveTrip}
+                isSaved={isSaved}
+              />
+            )}
+          </div>
+        ) : (
+          /* VIEW MODE 2: SAVED TRIPS LIST */
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-black text-[#14243A] font-serif">
+                  My Planned & Saved Expeditions
+                </h2>
+                <p className="text-xs sm:text-sm text-[#64748B]">
+                  Revisit your saved itineraries, export summaries, or continue personalizing.
+                </p>
               </div>
-            </Card>
-          ))}
 
-          {filteredTrips.length === 0 && (
-            <div className="p-12 text-center bg-navy-900/50 rounded-2xl border border-navy-800">
-              <Briefcase className="w-12 h-12 text-navy-500 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-white">No Trips in This Category</h3>
-              <p className="text-xs text-navy-400 mt-1 mb-4">
-                Ready to explore? Create a new trip or use our AI Budget Planner to generate one.
-              </p>
-              <Button size="sm" onClick={() => setIsModalOpen(true)}>
-                Plan a New Trip Now
-              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('planner');
+                  setCurrentStep(1);
+                }}
+                className="px-4 py-2 rounded-xl bg-[#14243A] text-white text-xs font-bold hover:bg-[#B85C38] transition-all flex items-center gap-1.5 shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create New Trip</span>
+              </button>
             </div>
-          )}
+
+            {savedTrips.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-[#E2D9C8] p-12 text-center space-y-4">
+                <Compass className="w-12 h-12 text-[#94A3B8] mx-auto animate-spin-slow" />
+                <h3 className="text-lg font-bold text-[#14243A]">No Saved Trips Found</h3>
+                <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+                  Use the multi-step interactive trip planner to create your first personalized India journey.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('planner')}
+                  className="px-6 py-2.5 rounded-xl bg-[#14243A] text-white text-xs font-bold hover:bg-[#B85C38]"
+                >
+                  Start Planning
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {savedTrips.map((trip) => (
+                  <div
+                    key={trip.id}
+                    className="bg-white rounded-2xl border border-[#E2D9C8] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                  >
+                    <div className="relative h-44 w-full bg-[#14243A]">
+                      <RobustImage
+                        src={trip.destinationCity.image}
+                        stateSlug={trip.destinationCity.stateSlug}
+                        alt={trip.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#14243A] via-[#14243A]/30 to-transparent" />
+                      
+                      <div className="absolute top-2.5 left-2.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#14243A]/80 text-[#FF9933] border border-white/10 uppercase">
+                          {trip.destinationCity.state}
+                        </span>
+                      </div>
+
+                      <div className="absolute bottom-2.5 left-3 right-3 text-white">
+                        <h4 className="text-lg font-bold font-serif leading-tight">{trip.title}</h4>
+                        <span className="text-xs text-white/80">{trip.durationDays} Days • {trip.selectedPlaces.length} Destinations</span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                      <div className="space-y-1 text-xs text-[#64748B]">
+                        <div className="flex justify-between">
+                          <span>Total Budget:</span>
+                          <strong className="text-[#14243A]">₹{trip.budget.effectiveBudget.toLocaleString()}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Transit:</span>
+                          <span className="text-[#14243A]">{trip.selectedTransport?.operatorOrName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Hotel:</span>
+                          <span className="text-[#14243A] line-clamp-1">{trip.selectedHotel?.name}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-[#E2D9C8] flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCity(trip.destinationCity);
+                            setDepartureCity(trip.departureCity);
+                            setSelectedPlaces(trip.selectedPlaces);
+                            setDurationDays(trip.durationDays);
+                            setBudgetAmount(trip.budget.totalBudget);
+                            setSelectedTransport(trip.selectedTransport);
+                            setSelectedHotel(trip.selectedHotel);
+                            setViewMode('planner');
+                            setCurrentStep(8);
+                          }}
+                          className="text-xs font-bold text-[#B85C38] hover:underline flex items-center gap-1"
+                        >
+                          <span>Open Itinerary &rarr;</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const filtered = savedTrips.filter((t) => t.id !== trip.id);
+                            setSavedTrips(filtered);
+                            if (typeof window !== 'undefined') {
+                              localStorage.setItem('waynex_planned_trips_v2', JSON.stringify(filtered));
+                            }
+                          }}
+                          className="text-[#94A3B8] hover:text-rose-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Persistent Floating AI Travel Assistant Button */}
+        <div className="fixed bottom-6 right-6 z-40">
+          <button
+            type="button"
+            onClick={() => setIsAssistantOpen(true)}
+            className="group flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-[#14243A] hover:bg-[#B85C38] text-white font-bold text-xs shadow-2xl shadow-[#14243A]/40 border border-white/20 transition-all duration-300 hover:scale-105"
+          >
+            <div className="w-6 h-6 rounded-lg bg-[#FF9933] text-[#14243A] flex items-center justify-center font-bold">
+              <Sparkles className="w-4 h-4 fill-current" />
+            </div>
+            <span>AI Travel Assistant</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          </button>
         </div>
 
-        {/* Modal: Plan New Trip */}
-        <Modal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title="Plan a New Trip"
-          description="Create a personalized travel schedule."
-        >
-          <form onSubmit={handleCreateTrip} className="space-y-4 pt-2">
-            <Input
-              label="Trip Title"
-              placeholder="e.g. Winter Trip to Hampi & Gokarna"
-              value={newTrip.title}
-              onChange={(e) => setNewTrip({ ...newTrip, title: e.target.value })}
-              required
-            />
-            <Input
-              label="Destination"
-              placeholder="e.g. Hampi, Karnataka"
-              value={newTrip.destination}
-              onChange={(e) => setNewTrip({ ...newTrip, destination: e.target.value })}
-              required
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="Start Date"
-                type="date"
-                value={newTrip.startDate}
-                onChange={(e) => setNewTrip({ ...newTrip, startDate: e.target.value })}
-              />
-              <Input
-                label="End Date"
-                type="date"
-                value={newTrip.endDate}
-                onChange={(e) => setNewTrip({ ...newTrip, endDate: e.target.value })}
-              />
-            </div>
-            <Input
-              label="Estimated Budget (₹)"
-              type="number"
-              value={newTrip.budget}
-              onChange={(e) => setNewTrip({ ...newTrip, budget: Number(e.target.value) })}
-            />
-            <div className="pt-2 flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary">
-                Save Itinerary
-              </Button>
-            </div>
-          </form>
-        </Modal>
+        {/* Slide-over Context-Aware AI Travel Assistant Drawer */}
+        <AIAssistantDrawer
+          isOpen={isAssistantOpen}
+          onClose={() => setIsAssistantOpen(false)}
+          destinationCity={selectedCity}
+          departureCity={departureCity}
+          selectedPlaces={selectedPlaces}
+          budgetAmount={budgetAmount}
+          durationDays={durationDays}
+          travellerType={travellerType}
+          selectedTransport={selectedTransport}
+          selectedHotel={selectedHotel}
+        />
       </Container>
     </div>
   );

@@ -1,15 +1,15 @@
 """
 Views for budget app.
 """
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.budget.models import BudgetProfile, BudgetRecommendation
+from apps.budget.models import BudgetProfile, BudgetRecommendation, TripPlan
 from apps.budget.serializers import (
     BudgetProfileSerializer, BudgetRecommendationSerializer,
-    BudgetEstimateSerializer,
+    BudgetEstimateSerializer, TripPlanSerializer,
 )
 from apps.budget.services import BudgetEstimationService
 from apps.destinations.models import Destination
@@ -75,3 +75,26 @@ class BudgetEstimateView(APIView):
             'num_travellers': serializer.validated_data['num_travellers'],
             **{k: str(v) for k, v in estimate.items()},
         })
+
+
+class TripPlanViewSet(viewsets.ModelViewSet):
+    """
+    CRUD ViewSet for interactive Trip Plans.
+    Supports authenticated users and guest sessions.
+    """
+    serializer_class = TripPlanSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        user = self.request.user
+        session_id = self.request.query_params.get('session_id')
+        if user and user.is_authenticated:
+            return TripPlan.objects.filter(user=user, is_active=True)
+        elif session_id:
+            return TripPlan.objects.filter(session_id=session_id, is_active=True)
+        return TripPlan.objects.filter(is_active=True)[:25]
+
+    def perform_create(self, serializer):
+        user = self.request.user if (self.request.user and self.request.user.is_authenticated) else None
+        serializer.save(user=user)
+

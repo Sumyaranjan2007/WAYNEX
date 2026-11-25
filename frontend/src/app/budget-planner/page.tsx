@@ -106,9 +106,24 @@ export default function BudgetPlannerPage() {
           <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">
             AI Budget Planner
           </h1>
-          <p className="text-navy-200 text-sm sm:text-base leading-relaxed">
+          <p className="text-navy-200 text-sm sm:text-base leading-relaxed mb-4">
             Configure your parameters. Our mathematical model simulates real ticket prices, dormitory tariffs, and regional meal rates across India.
           </p>
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-cyan-500/10 to-navy-900 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+              <span className="text-xs text-white">
+                Looking for an interactive step-by-step itinerary with exact attractions, bus/trains, and hotels?
+              </span>
+            </div>
+            <Link
+              href="/trips"
+              className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold text-xs shrink-0 transition-colors inline-flex items-center gap-1.5"
+            >
+              <span>Launch AI Trip Planner</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

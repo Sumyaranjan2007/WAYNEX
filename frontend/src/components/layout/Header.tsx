@@ -29,7 +29,7 @@ export const Header: React.FC = () => {
   const navLinks = [
     { label: 'Explore', href: '/explore' },
     { label: 'Destinations', href: '/destinations' },
-    { label: 'Plan Trip', href: '/budget-planner' },
+    { label: 'Plan Trip', href: '/trips' },
     { label: 'Transport', href: '/transport' },
     { label: 'Connect', href: '/connect' },
     { label: 'AI Assistant', href: '/assistant', icon: Sparkles },

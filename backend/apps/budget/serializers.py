@@ -51,3 +51,21 @@ class BudgetEstimateSerializer(serializers.Serializer):
     food_pref = serializers.ChoiceField(
         choices=BudgetProfile.FOOD_PREF_CHOICES, default='any',
     )
+
+
+class TripPlanSerializer(serializers.ModelSerializer):
+    """Serializer for interactive Trip Plan."""
+
+    class Meta:
+        from apps.budget.models import TripPlan
+        model = TripPlan
+        fields = [
+            'id', 'user', 'session_id', 'title', 'destination_city', 'departure_city',
+            'state', 'start_date', 'end_date', 'duration_days', 'budget_amount',
+            'budget_type', 'traveller_type', 'adults_count', 'children_count',
+            'transport_mode', 'accommodation_type', 'status', 'selected_places',
+            'expense_breakdown', 'itinerary_data', 'ai_suggestions',
+            'is_offline_cached', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
