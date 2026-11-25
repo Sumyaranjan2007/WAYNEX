@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 247 244 236; /* #F7F4EC Warm Ivory */
+    --foreground: 20 36 58;    /* #14243A Deep Navy */
+  }
+
+  * {
+    border-color: #E2D9C8;
+  }
+
+  body {
+    background-color: #F7F4EC;
+    color: #14243A;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  /* Refined warm scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #EFE9DC;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #C8BEAC;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B85C38;
+  }
+}
+
+@layer utilities {
+  .glass-nav {
+    background: rgba(247, 244, 236, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(226, 217, 200, 0.9);
+  }
+
+  .glass-card {
+    background: #FFFFFF;
+    border: 1px solid #E2D9C8;
+    box-shadow: 0 4px 20px -2px rgba(20, 36, 58, 0.05);
+  }
+
+  .glass-card-hover {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-card-hover:hover {
+    background: #FFFFFF;
+    border-color: #B85C38;
+    box-shadow: 0 12px 32px -8px rgba(184, 92, 56, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .glow-saffron-box {
+    box-shadow: 0 0 25px -5px rgba(255, 153, 51, 0.35);
+  }
+
+  .glow-terracotta-box {
+    box-shadow: 0 0 25px -5px rgba(184, 92, 56, 0.35);
+  }
+
+  .glow-sos-box {
+    box-shadow: 0 0 30px 0px rgba(220, 38, 38, 0.4);
+  }
+
+  .text-gradient-heritage {
+    background: linear-gradient(135deg, #14243A 0%, #B85C38 50%, #FF9933 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-saffron {
+    background: linear-gradient(135deg, #FF9933 0%, #E68222 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-terracotta {
+    background: linear-gradient(135deg, #B85C38 0%, #14243A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
