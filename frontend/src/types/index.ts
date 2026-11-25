@@ -188,17 +188,102 @@ export interface TravelRoom {
     name: string;
     avatar?: string;
   };
+  creator_username?: string;
   destination_name: string;
+  destination_city?: string;
+  state_name?: string;
+  cover_image?: string;
   destination_slug?: string;
   starting_location: string;
   travel_dates_start: string;
   travel_dates_end: string;
+  duration_days?: number;
   budget_per_person: number;
+  min_budget?: number;
+  max_budget?: number;
   max_members: number;
   current_members_count: number;
+  member_count?: number;
   travel_interests: string[];
-  status: 'planning' | 'confirmed' | 'ongoing' | 'completed';
-  visibility: 'public' | 'private';
+  travel_style?: string;
+  transport_preference?: string;
+  room_rules?: string;
+  live_mode?: boolean;
+  women_only?: boolean;
+  join_approval?: 'auto' | 'manual' | 'invite_only';
+  status: 'planning' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled';
+  visibility: 'public' | 'private' | 'unlisted';
+}
+
+export interface RoomMember {
+  id: string;
+  room: string;
+  user: string;
+  username: string;
+  role: 'admin' | 'moderator' | 'member';
+  status: 'pending' | 'approved' | 'rejected' | 'left' | 'banned';
+  joined_at: string;
+}
+
+export interface RoomMessage {
+  id: string;
+  room: string;
+  sender?: string;
+  sender_username: string;
+  message_type: 'text' | 'image' | 'location' | 'poll' | 'system';
+  content: string;
+  created_at: string;
+}
+
+export interface RoomPoll {
+  id: string;
+  room: string;
+  question: string;
+  options: string[];
+  votes: Record<string, string[]>;
+  is_active_poll: boolean;
+  created_at: string;
+}
+
+export interface RoomItineraryItem {
+  id: string;
+  room: string;
+  day_number: number;
+  time_slot: string;
+  title: string;
+  description: string;
+  category: string;
+  entry_fee: number;
+  votes_count: number;
+  voter_ids: string[];
+  is_confirmed: boolean;
+  suggested_by?: string;
+  suggested_by_username?: string;
+  created_at?: string;
+}
+
+export interface RoomExpense {
+  id: string;
+  room: string;
+  title: string;
+  amount: number;
+  category: string;
+  paid_by?: string;
+  paid_by_username: string;
+  split_among: string[];
+  receipt_url?: string;
+  created_at?: string;
+}
+
+export interface RoomMemory {
+  id: string;
+  room: string;
+  user?: string;
+  username: string;
+  image_url: string;
+  caption: string;
+  location_name: string;
+  created_at?: string;
 }
 
 export interface TrustedContact {
